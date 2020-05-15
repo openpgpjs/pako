@@ -3,15 +3,15 @@
 
 import * as deflate from "./lib/deflate.js";
 import * as inflate from "./lib/inflate.js";
-import constants from "./lib/zlib/constants.js";
+import * as constants from "./lib/zlib/constants.js";
 
 const pako = {
     ...deflate,
     ...inflate,
-    constants
+    ...constants
 };
 
 export default pako;
 export * from "./lib/deflate.js";
 export * from "./lib/inflate.js";
-export { default as constants } from "./lib/zlib/constants.js";
+export * from "./lib/zlib/constants.js";

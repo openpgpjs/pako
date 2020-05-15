@@ -8,7 +8,7 @@
 
 import * as assert from "https://deno.land/std@v0.50.0/testing/asserts.ts";
 
-import c from "../lib/zlib/constants.js";
+import * as c from "../lib/zlib/constants.js";
 import msg from "../lib/zlib/messages.js";
 import * as zlib_inflate from "../lib/zlib/inflate.js";
 import inflate_table from "../lib/zlib/inftrees.js";

@@ -3,7 +3,7 @@
 
 
 
-import c from "../lib/zlib/constants.js";
+import * as c from "../lib/zlib/constants.js";
 import msg from "../lib/zlib/messages.js";
 import pako from "../mod.js";
 import * as zlib_deflate from "../lib/zlib/deflate.js";
