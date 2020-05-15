@@ -6,15 +6,13 @@
 'use strict';
 
 
-var assert = require('assert');
+import * as assert from "https://deno.land/std@v0.50.0/testing/asserts.ts";
 
-var c = require('../lib/zlib/constants');
-var msg = require('../lib/zlib/messages');
-//var zlib_stream = require('../lib/zlib/zstream');
-var zlib_inflate = require('../lib/zlib/inflate');
-var inflate_table = require('../lib/zlib/inftrees');
-
-var pako  = require('../index');
+import c from "../lib/zlib/constants.js";
+import msg from "../lib/zlib/messages.js";
+import * as zlib_inflate from "../lib/zlib/inflate.js";
+import inflate_table from "../lib/zlib/inftrees.js";
+import pako from "../mod.js";
 
 
 function h2b(hex) {
@@ -29,13 +27,18 @@ function testInflate(hex, wbits, status) {
   try {
     inflator = new pako.Inflate({ windowBits: wbits });
   } catch (e) {
-    assert(e === msg[status]);
+    assert.assert(e === msg[status]);
     return;
   }
   inflator.push(h2b(hex), true);
-  assert.equal(inflator.err, status);
+  assert.assertEquals(inflator.err, status);
 }
 
+const it = (name, fn) => Deno.test({
+  name,
+  fn
+}),
+describe = (_, func) => func();
 
 describe('Inflate states', function () {
   //in port checking input parameters was removed
@@ -43,10 +46,10 @@ describe('Inflate states', function () {
     var ret;
 
     ret = zlib_inflate.inflate(null, 0);
-    assert(ret === c.Z_STREAM_ERROR);
+    assert.assert(ret === c.Z_STREAM_ERROR);
 
     ret = zlib_inflate.inflateEnd(null);
-    assert(ret === c.Z_STREAM_ERROR);
+    assert.assert(ret === c.Z_STREAM_ERROR);
 
     //skip: inflateCopy is not implemented
     //ret = zlib_inflate.inflateCopy(null, null);
@@ -170,11 +173,11 @@ describe('cover trees', function () {
     next = table;
 
     ret = inflate_table(DISTS, lens, 0, 16, next, 0, work, { bits: 15 });
-    assert(ret === 1);
+    assert.assert(ret === 1);
 
     next = table;
     ret = inflate_table(DISTS, lens, 0, 16, next, 0, work, { bits: 1 });
-    assert(ret === 1);
+    assert.assert(ret === 1);
   });
 });
 

@@ -1,25 +1,22 @@
 // Deflate coverage tests
-
-/*global describe, it*/
-
-
 'use strict';
 
 
-var assert = require('assert');
-var fs = require('fs');
-var path  = require('path');
 
-var c = require('../lib/zlib/constants');
-var msg = require('../lib/zlib/messages');
-var zlib_deflate = require('../lib/zlib/deflate');
-var ZStream = require('../lib/zlib/zstream');
+import c from "../lib/zlib/constants.js";
+import msg from "../lib/zlib/messages.js";
+import pako from "../mod.js";
+import * as zlib_deflate from "../lib/zlib/deflate.js";
+import ZStream from "../lib/zlib/zstream.js";
+import * as assert from "https://deno.land/std@v0.50.0/testing/asserts.ts";
+import * as path from "https://deno.land/std@v0.50.0/path/mod.ts";
 
-var pako  = require('../index');
+import { dirname } from "./helpers.js";
+const { __dirname } = dirname(import.meta);
 
 
 var short_sample = 'hello world';
-var long_sample = fs.readFileSync(path.join(__dirname, 'fixtures/samples/lorem_en_100k.txt'));
+var long_sample = Deno.readFileSync(path.join(__dirname, 'fixtures/samples/lorem_en_100k.txt'));
 
 function testDeflate(data, opts, flush) {
   var deflator = new pako.Deflate(opts);
@@ -28,6 +25,11 @@ function testDeflate(data, opts, flush) {
 
   assert.equal(deflator.err, false, msg[deflator.err]);
 }
+const it = (name, fn) => Deno.test({
+  name,
+  fn
+}),
+describe = (_, func) => func();
 
 describe('Deflate support', function () {
   it('stored', function () {
@@ -61,36 +63,36 @@ describe('Deflate states', function () {
     var ret, strm;
 
     ret = zlib_deflate.deflate(null, 0);
-    assert(ret === c.Z_STREAM_ERROR);
+    assert.assert(ret === c.Z_STREAM_ERROR);
 
     strm = new ZStream();
 
     ret = zlib_deflate.deflateInit(null);
-    assert(ret === c.Z_STREAM_ERROR);
+    assert.assert(ret === c.Z_STREAM_ERROR);
 
     ret = zlib_deflate.deflateInit(strm, 6);
-    assert(ret === c.Z_OK);
+    assert.assert(ret === c.Z_OK);
 
     ret = zlib_deflate.deflateSetHeader(null);
-    assert(ret === c.Z_STREAM_ERROR);
+    assert.assert(ret === c.Z_STREAM_ERROR);
 
     strm.state.wrap = 1;
     ret = zlib_deflate.deflateSetHeader(strm, null);
-    assert(ret === c.Z_STREAM_ERROR);
+    assert.assert(ret === c.Z_STREAM_ERROR);
 
     strm.state.wrap = 2;
     ret = zlib_deflate.deflateSetHeader(strm, null);
-    assert(ret === c.Z_OK);
+    assert.assert(ret === c.Z_OK);
 
     ret = zlib_deflate.deflate(strm, c.Z_FINISH);
-    assert(ret === c.Z_BUF_ERROR);
+    assert.assert(ret === c.Z_BUF_ERROR);
 
     ret = zlib_deflate.deflateEnd(null);
-    assert(ret === c.Z_STREAM_ERROR);
+    assert.assert(ret === c.Z_STREAM_ERROR);
 
     //BS_NEED_MORE
     strm.state.status = 5;
     ret = zlib_deflate.deflateEnd(strm);
-    assert(ret === c.Z_STREAM_ERROR);
+    assert.assert(ret === c.Z_STREAM_ERROR);
   });
 });

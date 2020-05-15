@@ -4,15 +4,21 @@
 'use strict';
 
 
-var zlib        = require('zlib');
-var assert      = require('assert');
+var zlib        = {};
+import * as assert from "https://deno.land/std@v0.50.0/testing/asserts.ts";
+import pako from "../mod.js";
+import * as helpers from "./helpers.js";
+import * as path from "https://deno.land/std@v0.50.0/path/mod.ts";
+var { testInflate, dirname } = helpers;
 
-var pako        = require('../index');
-var helpers     = require('./helpers');
-var testInflate = helpers.testInflate;
-
+const { __dirname } = dirname(import.meta);
 
 var samples = helpers.loadSamples();
+const it = (name, fn) => Deno.test({
+  name,
+  fn
+}),
+describe = (_, func) => func();
 
 describe('Inflate defaults', function () {
 
@@ -28,7 +34,6 @@ describe('Inflate defaults', function () {
     var compressed_samples = helpers.loadSamples('samples_deflated_raw');
     helpers.testSamples(zlib.inflateRawSync, pako.inflateRaw, compressed_samples, {});
   });
-
 });
 
 
@@ -75,7 +80,6 @@ describe('Inflate levels', function () {
   it('level 0', function () {
     testInflate(samples, {}, { level: 0 });
   });
-
 });
 
 
@@ -105,7 +109,6 @@ describe('Inflate windowBits', function () {
   it('windowBits 8', function () {
     testInflate(samples, {}, { windowBits: 8 });
   });
-
 });
 
 describe('Inflate strategy', function () {
@@ -125,7 +128,6 @@ describe('Inflate strategy', function () {
   it('Z_FIXED', function () {
     testInflate(samples, {}, { strategy: 4 });
   });
-
 });
 
 
@@ -161,7 +163,6 @@ describe('Inflate RAW', function () {
   it('level 0', function () {
     testInflate(samples, { raw: true }, { level: 0, raw: true });
   });
-
 });
 
 
@@ -171,9 +172,9 @@ describe('Inflate with dictionary', function () {
     // var zCompressed = helpers.deflateSync('world', { dictionary: b('hello') });
     var zCompressed = new Uint8Array([ 120, 187, 6, 44, 2, 21, 43, 207, 47, 202, 73, 1, 0, 6, 166, 2, 41 ]);
 
-    assert.throws(function () {
+    assert.assertThrows(function () {
       pako.inflate(zCompressed, { dictionary: 'world' });
-    }, /data error/);
+    }, Error, "data error");
   });
 
   it('trivial dictionary', function () {
@@ -182,19 +183,19 @@ describe('Inflate with dictionary', function () {
   });
 
   it('spdy dictionary', function () {
-    var spdyDict = require('fs').readFileSync(require('path').join(__dirname, 'fixtures', 'spdy_dict.txt'));
+    var spdyDict = Deno.readFileSync(path.join(__dirname, 'fixtures', 'spdy_dict.txt'));
     testInflate(samples, { dictionary: spdyDict }, { dictionary: spdyDict });
   });
 
   it('should throw if directory is not supplied to raw inflate', function () {
     var dict = 'abcdefghijklmnoprstuvwxyz';
-    assert.throws(function () {
+    assert.assertThrows(function () {
       testInflate(samples, { raw: true }, { raw: true, dictionary: dict });
     });
   });
 
   it('tests raw inflate with spdy dictionary', function () {
-    var spdyDict = require('fs').readFileSync(require('path').join(__dirname, 'fixtures', 'spdy_dict.txt'));
+    var spdyDict = Deno.readFileSync(path.join(__dirname, 'fixtures', 'spdy_dict.txt'));
     testInflate(samples, { raw: true, dictionary: spdyDict }, { raw: true, dictionary: spdyDict });
   });
 

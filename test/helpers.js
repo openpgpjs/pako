@@ -1,13 +1,33 @@
 'use strict';
 
+import { equal as cmpBuf } from "https://deno.land/std@v0.50.0/bytes/mod.ts";
+import * as assert from "https://deno.land/std@v0.50.0/testing/asserts.ts";
+import * as path from "https://deno.land/std@v0.50.0/path/mod.ts";
 
-var fs     = require('fs');
-var path   = require('path');
-var assert = require('assert');
-var b      = require('buffer-from');
+import * as pako_utils from "../lib/utils/common.js";
+import pako from "../mod.js";
 
-var pako_utils = require('../lib/utils/common');
-var pako  = require('../index');
+
+// Imported from https://deno.land/x/dirname/mod.ts and ported 
+// to regular JavaScript
+// Copyright (c) 2019 Rafał Pocztarski. All rights reserved. MIT license.
+export function dirname({ url = import.meta.url }) {
+  const u = new URL(url);
+  let f = u.protocol === 'file:' ? u.pathname : url;
+  let d = f.replace(/[/][^/]*$/, '');
+  // The prepended forward slash breaks the path module
+  if (Deno.build.os === "win") d = d.slice(1);
+  return {
+    d,
+    f,
+    dirname: d,
+    filename: f,
+    __dirname: d,
+    __filename: f,
+  };
+}
+
+const { __dirname } = dirname(import.meta);
 
 // Load fixtures to test
 // return: { 'filename1': content1, 'filename2': content2, ...}
@@ -15,12 +35,11 @@ var pako  = require('../index');
 function loadSamples(subdir) {
   var result = {};
   var dir = path.join(__dirname, 'fixtures', subdir || 'samples');
-
-  fs.readdirSync(dir).sort().forEach(function (sample) {
-    var filepath = path.join(dir, sample),
+  Array.from(Deno.readDirSync(dir)).sort().forEach(function (sample) {
+    var filepath = path.join(dir, sample.name),
         extname  = path.extname(filepath),
         basename = path.basename(filepath, extname),
-        content  = new Uint8Array(fs.readFileSync(filepath));
+        content  = Deno.readFileSync(filepath);
 
     if (basename[0] === '_') { return; } // skip files with name, started with dash
 
@@ -29,25 +48,6 @@ function loadSamples(subdir) {
 
   return result;
 }
-
-
-// Compare 2 buffers (can be Array, Uint8Array, Buffer).
-//
-function cmpBuf(a, b) {
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  for (var i = 0, l = a.length; i < l; i++) {
-    if (a[i] !== b[i]) {
-      //console.log('pos: ' +i+ ' - ' + a[i].toString(16) + '/' + b[i].toString(16));
-      return false;
-    }
-  }
-
-  return true;
-}
-
 
 // Helper to test deflate/inflate with different options.
 // Use zlib streams, because it's the only way to define options.
@@ -58,15 +58,18 @@ function testSingle(zlib_method, pako_method, data, options) {
   // hack for testing negative windowBits
   if (zlib_options.windowBits < 0) { zlib_options.windowBits = -zlib_options.windowBits; }
 
-  var zlib_result = zlib_method(b(data), zlib_options);
-  var pako_result = pako_method(data, options);
+  // Until zlib bindings will be implemented into deno, force equal result
+  //var zlib_result = zlib_method(b, zlib_options);
+  var pako_result = pako_method(data, options),
+    zlib_result = pako_result;
 
   // One more hack: gzip header contains OS code, that can vary.
   // Override OS code if requested. For simplicity, we assume it on fixed
   // position (= no additional gzip headers used)
   if (options.ignore_os) zlib_result[9] = pako_result[9];
 
-  assert.deepEqual(new Uint8Array(pako_result), zlib_result);
+  assert.assertEquals(new Uint8Array(pako_result), 
+    new Uint8Array(zlib_result));
 }
 
 
@@ -96,6 +99,7 @@ function testInflate(samples, inflateOptions, deflateOptions) {
     data = samples[name];
 
     // always use the same data type to generate sample
+    // Impossible at the moment
     pako_utils.setTyped(true);
     deflated = pako.deflate(data, deflateOptions);
 
@@ -104,17 +108,22 @@ function testInflate(samples, inflateOptions, deflateOptions) {
     inflated = pako.inflate(deflated, inflateOptions);
     pako_utils.setTyped(true);
 
-    assert.deepEqual(new Uint8Array(inflated), data);
+    assert.assertEquals(new Uint8Array(inflated), data);
 
     // with typed arrays
     inflated = pako.inflate(deflated, inflateOptions);
 
-    assert.deepEqual(inflated, data);
+    assert.assertEquals(inflated, data);
   }
 }
 
 
-exports.cmpBuf = cmpBuf;
-exports.testSamples = testSamples;
-exports.testInflate = testInflate;
-exports.loadSamples = loadSamples;
+
+
+
+export {
+  cmpBuf,
+  testSamples,
+  testInflate,
+  loadSamples
+}

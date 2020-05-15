@@ -1,22 +1,35 @@
-/*global describe, it*/
-
+// TODO: implement when https://github.com/denoland/deno/issues/4071
+//       is implemented
 
 'use strict';
 
 
-var zlib = require('zlib');
-
-var pako    = require('../index');
-var helpers = require('./helpers');
-var testSamples = helpers.testSamples;
-var assert  = require('assert');
-var fs      = require('fs');
-var path    = require('path');
-var b       = require('buffer-from');
+//var zlib = require('zlib');
+var zlib = {};
+import pako from "../mod.js";
+import * as helpers from "./helpers.js";
+var { testSamples } = helpers;
 
 
+import * as assert from "https://deno.land/std@v0.50.0/testing/asserts.ts";
+import * as path from "https://deno.land/std@v0.50.0/path/mod.ts";
+const _te = new TextEncoder();
+var b = d => {
+  if (d instanceof Uint8Array) return d;
+  return _te.encode(d);
+}
 
 var samples = helpers.loadSamples();
+
+import { dirname } from "./helpers.js";
+const { __dirname } = dirname(import.meta);
+
+
+const it = (name, fn) => Deno.test({
+  name,
+  fn
+}),
+describe = (_, func) => func();
 
 
 describe('Deflate defaults', function () {
@@ -65,7 +78,7 @@ describe('Deflate levels', function () {
   it('level 1', function () {
     testSamples(zlib.deflateSync, pako.deflate, samples, { level: 1 });
   });
-  it.skip('level 0', function () {
+  it('level 0', function () {
     testSamples(zlib.deflateSync, pako.deflate, samples, { level: 0 });
   });
   it('level -1 (implicit default)', function () {
@@ -169,7 +182,7 @@ describe('Deflate RAW', function () {
   it('level 1', function () {
     testSamples(zlib.deflateRawSync, pako.deflateRaw, samples, { level: 1 });
   });
-  it.skip('level 0', function () {
+  it('level 0', function () {
     testSamples(zlib.deflateRawSync, pako.deflateRaw, samples, { level: 0 });
   });
 
@@ -184,7 +197,7 @@ describe('Deflate dictionary', function () {
   });
 
   it('spdy dictionary', function () {
-    var spdyDict = require('fs').readFileSync(require('path').join(__dirname, 'fixtures', 'spdy_dict.txt'));
+    var spdyDict = Deno.readFileSync(path.join(__dirname, 'fixtures', 'spdy_dict.txt'));
 
     testSamples(zlib.deflateSync, pako.deflate, samples, { dictionary: spdyDict });
   });
@@ -211,7 +224,7 @@ describe('Deflate dictionary', function () {
 describe('Deflate issues', function () {
 
   it('#78', function () {
-    var data = fs.readFileSync(path.join(__dirname, 'fixtures', 'issue_78.bin'));
+    var data = Deno.readFileSync(path.join(__dirname, 'fixtures', 'issue_78.bin'));
     var deflatedPakoData = pako.deflate(data, { memLevel: 1 });
     var inflatedPakoData = pako.inflate(deflatedPakoData);
 
