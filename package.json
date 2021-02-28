@@ -1,5 +1,5 @@
 {
-  "name": "pako",
+  "name": "@openpgp/pako",
   "description": "zlib port to javascript - fast, modularized, with browser support",
   "version": "1.0.11",
   "keywords": [
